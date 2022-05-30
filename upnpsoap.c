@@ -734,6 +734,7 @@ add_resized_res(int srcw, int srch, int reqw, int reqh, char *dlna_pn,
 {
 	int dstw = reqw;
 	int dsth = reqh;
+	const char *host = runtime_vars.myhost[0] ? runtime_vars.myhost : lan_addr[args->iface].str;
 
 	if( (args->flags & FLAG_NO_RESIZE) && reqw > 160 && reqh > 160 )
 		return;
@@ -754,7 +755,7 @@ add_resized_res(int srcw, int srch, int reqw, int reqh, char *dlna_pn,
 	                          "http://%s:%d/Resized/%s.jpg?width=%d,height=%d"
 	                          "&lt;/res&gt;",
 	                          dlna_pn, DLNA_FLAG_DLNA_V1_5|DLNA_FLAG_HTTP_STALLING|DLNA_FLAG_TM_B|DLNA_FLAG_TM_I, 0,
-	                          lan_addr[args->iface].str, runtime_vars.port,
+	                          host, runtime_vars.port,
 	                          detailID, dstw, dsth);
 }
 
@@ -763,6 +764,7 @@ add_res(char *size, char *duration, char *bitrate, char *sampleFrequency,
         char *nrAudioChannels, char *resolution, char *dlna_pn, char *mime,
         char *detailID, const char *ext, struct Response *args)
 {
+	const char *host = runtime_vars.myhost[0] ? runtime_vars.myhost : lan_addr[args->iface].str;
 	strcatf(args->str, "&lt;res ");
 	if( size && (args->filter & FILTER_RES_SIZE) ) {
 		strcatf(args->str, "size=\"%s\" ", size);
@@ -793,13 +795,13 @@ add_res(char *size, char *duration, char *bitrate, char *sampleFrequency,
 				strcatf(args->str, "pv:subtitleFileType=\"SRT\" ");
 			if( args->filter & FILTER_PV_SUBTITLE_FILE_URI )
 				strcatf(args->str, "pv:subtitleFileUri=\"http://%s:%d/Captions/%s.srt\" ",
-					lan_addr[args->iface].str, runtime_vars.port, detailID);
+					host, runtime_vars.port, detailID);
 		}
 	}
 	strcatf(args->str, "protocolInfo=\"http-get:*:%s:%s\"&gt;"
 	                          "http://%s:%d/MediaItems/%s.%s"
 	                          "&lt;/res&gt;",
-	                          mime, dlna_pn, lan_addr[args->iface].str,
+	                          mime, dlna_pn, host,
 	                          runtime_vars.port, detailID, ext);
 }
 
@@ -845,6 +847,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 	const char *ext;
 	struct string_s *str = passed_args->str;
 	int ret = 0;
+	const char *host = runtime_vars.myhost[0] ? runtime_vars.myhost : lan_addr[passed_args->iface].str;
 
 	/* Make sure we have at least 8KB left of allocated memory to finish the response. */
 	if( str->off > (str->size - 8192) )
@@ -1091,7 +1094,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 					ret = strcatf(str, "&lt;res protocolInfo=\"http-get:*:%s:%s\"&gt;"
 					                   "http://%s:%d/Thumbnails/%s.jpg"
 					                   "&lt;/res&gt;",
-					                   mime, "DLNA.ORG_PN=JPEG_TN;DLNA.ORG_CI=1", lan_addr[passed_args->iface].str,
+					                   mime, "DLNA.ORG_PN=JPEG_TN;DLNA.ORG_CI=1", host,
 					                   runtime_vars.port, detailID);
 				}
 				else
@@ -1175,12 +1178,12 @@ callback(void *args, int argc, char **argv, char **azColName)
 							ret = strcatf(str, "&lt;res protocolInfo=\"http-get:*:text/srt:*\"&gt;"
 									     "http://%s:%d/Captions/%s.srt"
 									   "&lt;/res&gt;",
-									   lan_addr[passed_args->iface].str, runtime_vars.port, detailID);
+									   host, runtime_vars.port, detailID);
 						if( passed_args->filter & FILTER_SEC_CAPTION_INFO_EX )
 							ret = strcatf(str, "&lt;sec:CaptionInfoEx sec:type=\"srt\"&gt;"
 							                     "http://%s:%d/Captions/%s.srt"
 							                   "&lt;/sec:CaptionInfoEx&gt;",
-							                   lan_addr[passed_args->iface].str, runtime_vars.port, detailID);
+							                   host, runtime_vars.port, detailID);
 					}
 					break;
 				}
@@ -1193,7 +1196,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 				ret = strcatf(str, "&lt;res protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN\"&gt;"
 				                   "http://%s:%d/AlbumArt/%s-%s.jpg"
 				                   "&lt;/res&gt;",
-				                   lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+				                   host, runtime_vars.port, album_art, detailID);
 				if (passed_args->client == ESamsungSeriesCDE ) {
 					ret = strcatf(str, "&lt;res dlna:profileID=\"JPEG_SM\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\""
 							   " protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;"
@@ -1201,7 +1204,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 							   "http://%s:%d/AlbumArt/%s-%s.jpg"
 							   "&lt;/res&gt;",
 							   DLNA_FLAG_DLNA_V1_5|DLNA_FLAG_TM_B|DLNA_FLAG_TM_I, 0,
-							   lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+							   host, runtime_vars.port, album_art, detailID);
 				}
 			} else if( passed_args->filter & FILTER_UPNP_ALBUMARTURI ) {
 				ret = strcatf(str, "&lt;upnp:albumArtURI");
@@ -1209,7 +1212,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 					ret = strcatf(str, " dlna:profileID=\"JPEG_TN\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"");
 				}
 				ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s.jpg&lt;/upnp:albumArtURI&gt;",
-				                   lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+				                   host, runtime_vars.port, album_art, detailID);
 			}
 		}
 		if( (passed_args->flags & FLAG_MS_PFS) && *mime == 'i' ) {
@@ -1221,12 +1224,12 @@ callback(void *args, int argc, char **argv, char **azColName)
 				ret = strcatf(str, "&lt;upnp:albumArtURI&gt;"
 				                   "http://%s:%d/Thumbnails/%s.jpg"
 				                   "&lt;/upnp:albumArtURI&gt;",
-				                   lan_addr[passed_args->iface].str, runtime_vars.port, detailID);
+				                   host, runtime_vars.port, detailID);
 			} else {
 				ret = strcatf(str, "&lt;upnp:albumArtURI&gt;"
 				                   "http://%s:%d/Resized/%s.jpg?width=160,height=160"
 				                   "&lt;/upnp:albumArtURI&gt;",
-				                   lan_addr[passed_args->iface].str, runtime_vars.port, detailID);
+				                   host, runtime_vars.port, detailID);
 			}
 		}
 		ret = strcatf(str, "&lt;/item&gt;");
@@ -1270,7 +1273,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 				ret = strcatf(str, "dlna:profileID=\"JPEG_TN\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"");
 			}
 			ret = strcatf(str, "&gt;http://%s:%d/AlbumArt/%s-%s.jpg&lt;/upnp:albumArtURI&gt;",
-			                   lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
+			                   host, runtime_vars.port, album_art, detailID);
 		}
 		if( passed_args->filter & FILTER_AV_MEDIA_CLASS ) {
 			char class;

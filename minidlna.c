@@ -588,6 +588,7 @@ init(int argc, char **argv)
 	runtime_vars.max_connections = 50;
 	runtime_vars.root_container = NULL;
 	runtime_vars.ifaces[0] = NULL;
+	runtime_vars.myhost[0] = 0;
 
 	/* read options file first since
 	 * command line arguments have final say */
@@ -811,6 +812,12 @@ init(int argc, char **argv)
 		case ENABLE_SUBTITLES:
 			if (!strtobool(ary_options[i].value))
 				CLEARFLAG(SUBTITLES_MASK);
+			break;
+		case OVERRIDE_HOST:
+			strncpy(runtime_vars.myhost, ary_options[i].value,
+				sizeof(runtime_vars.myhost));
+			DPRINTF(E_WARN, L_GENERAL, "Overriding host for all clients to: %s\n",
+				runtime_vars.myhost);
 			break;
 		default:
 			DPRINTF(E_ERROR, L_GENERAL, "Unknown option in file %s\n",

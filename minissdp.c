@@ -663,6 +663,8 @@ ProcessSSDPRequest(struct event *ev)
 		else if (st && (st_len > 0))
 		{
 			int l;
+			/* The actual host we will advertise, which may be different */
+			const char *adv_host;
 #ifdef __linux__
 			char host[40] = "127.0.0.1";
 			struct cmsghdr *cmsg;
@@ -686,6 +688,7 @@ ProcessSSDPRequest(struct event *ev)
 						break;
 				}
 			}
+			adv_host = host;
 #else
 			const char *host;
 			int iface = 0;
@@ -699,8 +702,12 @@ ProcessSSDPRequest(struct event *ev)
 					break;
 				}
 			}
-			host = lan_addr[iface].str;
+			adv_host = host = lan_addr[iface].str;
 #endif
+			if (runtime_vars.myhost[0]) {
+			    adv_host = runtime_vars.myhost;
+			}
+
 			if (n_lan_addr == i)
 			{
 				DPRINTF(E_DEBUG, L_SSDP, "Ignoring SSDP M-SEARCH on other interface [%s]\n",
@@ -740,7 +747,7 @@ ProcessSSDPRequest(struct event *ev)
 						break;
 				}
 				_usleep(13000, 20000);
-				SendSSDPResponse(s, sendername, i, host,
+				SendSSDPResponse(s, sendername, i, adv_host,
 				    (unsigned short)runtime_vars.port, len_r);
 				return;
 			}
@@ -752,7 +759,7 @@ ProcessSSDPRequest(struct event *ev)
 				for (i=0; known_service_types[i]; i++)
 				{
 					l = strlen(known_service_types[i]);
-					SendSSDPResponse(s, sendername, i, host,
+					SendSSDPResponse(s, sendername, i, adv_host,
 					    (unsigned short)runtime_vars.port,
 					    len_r);
 				}
